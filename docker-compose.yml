@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # MongoDB Database Service
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=dd_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mean-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/dd_db --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Node.js Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    restart: unless-stopped
+    environment:
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - DB_NAME=dd_db
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - mean-network
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend Angular Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - mean-network
+
+  # Jenkins CI/CD Service
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+    container_name: jenkins
+    restart: unless-stopped
+    user: root
+    privileged: true
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - JENKINS_OPTS=--prefix=/jenkins
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace
+    networks:
+      - mean-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/login || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+# Custom Bridge Network
+networks:
+  mean-network:
+    driver: bridge
+    name: mean-network
+
+# Named Volumes for Data Persistence
+volumes:
+  mongodb_data:
+    driver: local
+    name: mongodb_data
+  jenkins_home:
+    driver: local
+    name: jenkins_home

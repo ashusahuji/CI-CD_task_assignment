@@ -1,0 +1,8 @@
+docker-workflow:latest
+docker-plugin:latest
+git:latest
+credentials-binding:latest
+workflow-aggregator:latest
+pipeline-stage-view:latest
+blueocean:latest
+configuration-as-code:latest

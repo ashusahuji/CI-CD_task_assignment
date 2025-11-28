@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.gitignore
+.editorconfig
+README.md
+.DS_Store
+*.log
+*.spec.ts
+karma.conf.js
+.angular

@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# Docker
+**/.dockerignore
+**/Dockerfile
+docker-compose*.yml
+
+# Node modules
+**/node_modules
+
+# Build artifacts
+**/dist
+
+# Logs
+**/*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
