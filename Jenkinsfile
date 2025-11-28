@@ -91,10 +91,10 @@ pipeline {
                     script {
                         sh """
                             # Force remove any existing containers with these names
-                            docker rm -f mongodb backend frontend || true
+                            docker rm -f mongodb backend frontend nginx || true
                             
                             # Start services with latest images
-                            docker compose up -d mongodb backend frontend
+                            docker compose up -d mongodb backend frontend nginx
                             
                             # Wait for services to be healthy
                             echo 'Waiting for services to start...'
@@ -114,12 +114,20 @@ pipeline {
                             # Check if containers are running
                             docker compose ps
                             
-                            # Check backend health
-                            echo 'Checking backend...'
-                            curl -f http://backend:8080/ || echo 'Backend not ready yet'
+                            # Check nginx health
+                            echo 'Checking nginx reverse proxy...'
+                            curl -f http://nginx/health || echo 'Nginx health check not ready yet'
+                            
+                            # Check frontend through nginx
+                            echo 'Checking frontend through nginx...'
+                            curl -f http://nginx/ || echo 'Frontend not ready yet'
+                            
+                            # Check backend through nginx
+                            echo 'Checking backend API through nginx...'
+                            curl -f http://nginx/api || echo 'Backend API not ready yet'
                             
                             # List running containers
-                            docker ps --filter 'name=backend' --filter 'name=frontend' --filter 'name=mongodb'
+                            docker ps --filter 'name=backend' --filter 'name=frontend' --filter 'name=mongodb' --filter 'name=nginx'
                         """
                     }
                 }
